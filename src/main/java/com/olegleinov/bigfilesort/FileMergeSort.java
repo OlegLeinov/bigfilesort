@@ -7,7 +7,18 @@ public class FileMergeSort {
     private static final String OUTPUT_TMP_FILE_TEMPLATE = "tmpbuffer";
     private static final String RESULT_FILE = "result.txt";
     private static final int ARRAY_SIZE_MB = 95;
-    private static final int ARRAY_SIZE = ARRAY_SIZE_MB * 1024 * 1024 / 4;
+    private static final int INTEGER_MB_RATIO = 1024 * 1024 / 4;
+    private final int arraySizeMb;
+    private final int arraySize;
+
+    public FileMergeSort() {
+        this(ARRAY_SIZE_MB);
+    }
+
+    public FileMergeSort(int bufferSize) {
+        this.arraySizeMb = bufferSize;
+        this.arraySize = this.arraySizeMb * INTEGER_MB_RATIO;
+    }
 
     public void sort(File originalFile) {
         try {
@@ -36,10 +47,10 @@ public class FileMergeSort {
     }
 
     List<File> sortBatchToFiles(BufferedReader fileReader, File folder) throws IOException {
-        int[] tmpNumbers = new int[ARRAY_SIZE];
+        int[] tmpNumbers = new int[arraySize];
         List<File> files = new ArrayList<>();
         while (true) {
-            System.out.println("Read " + ARRAY_SIZE_MB + " mb data");
+            System.out.println("Read " + arraySizeMb + " mb data");
             int actualSize = readFileChunkToArray(tmpNumbers, fileReader);
             if (actualSize == 0) {
                 System.out.println(files.size() + " files was created");
@@ -113,7 +124,7 @@ public class FileMergeSort {
         return newTmpFile;
     }
 
-    BufferedWriter createResultFileWriter(File folder) throws IOException {
+    private BufferedWriter createResultFileWriter(File folder) throws IOException {
         File result = new File(folder, RESULT_FILE);
         if (!result.createNewFile()) {
             throw new RuntimeException("Can't create file result.txt");
@@ -121,8 +132,8 @@ public class FileMergeSort {
         return new BufferedWriter(new FileWriter(result));
     }
 
-    List<DataInputStream> openTmpFileReaders(List<File> files) throws FileNotFoundException {
-        List<DataInputStream> readers = new ArrayList<DataInputStream>(files.size());
+    private List<DataInputStream> openTmpFileReaders(List<File> files) throws FileNotFoundException {
+        List<DataInputStream> readers = new ArrayList<>(files.size());
         for (File file : files) {
             readers.add(new DataInputStream(new BufferedInputStream(new FileInputStream(file))));
         }
