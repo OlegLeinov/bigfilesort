@@ -5,16 +5,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FileMergeSortTest {
@@ -46,55 +41,88 @@ public class FileMergeSortTest {
         verify(originalFile).getParentFile();
     }
 
-    @Test
-    public void sortBatchToFiles() throws Exception {
-        File originalFile = mock(File.class);
-        File folder = mock(File.class);
-        FileReader fReader = mock(FileReader.class);
-        BufferedReader fileReader = mock(BufferedReader.class);
-        List<File> sortedFiles = List.of(mock(File.class));
-        whenNew(BufferedReader.class).withArguments(any(FileReader.class)).thenReturn(fileReader);
-        whenNew(FileReader.class).withArguments(any(File.class)).thenReturn(fReader);
-        doReturn(sortedFiles).when(fileMergeSort).sortBatchToFiles(any(BufferedReader.class), any());
-
-        List<File> files = fileMergeSort.sortBatchToFiles(originalFile, folder);
-
-        verifyNew(FileReader.class).withArguments(originalFile);
-        verifyNew(BufferedReader.class).withArguments(fReader);
-        verify(fileMergeSort).sortBatchToFiles(fileReader, folder);
-        verify(fileReader).close();
-        assertEquals(sortedFiles, files);
-    }
-
-    @Test
-    public void mergeSortedFiles() {
-    }
+//    @Test
+//    public void sortBatchToFiles() throws Exception {
+//        File originalFile = mock(File.class);
+//        File folder = mock(File.class);
+//        FileReader fReader = mock(FileReader.class);
+//        BufferedReader fileReader = mock(BufferedReader.class);
+//        List<File> sortedFiles = List.of(mock(File.class));
+//        PowerMockito.whenNew(BufferedReader.class).withArguments(any(FileReader.class)).thenReturn(fileReader);
+//        PowerMockito.whenNew(FileReader.class).withArguments(any(File.class)).thenReturn(fReader);
+//        doReturn(sortedFiles).when(fileMergeSort).sortBatchToFiles(any(BufferedReader.class), any());
+//
+//        List<File> files = fileMergeSort.sortBatchToFiles(originalFile, folder);
+//
+//        verifyNew(FileReader.class).withArguments(originalFile);
+//        verifyNew(BufferedReader.class).withArguments(fReader);
+//        verify(fileMergeSort).sortBatchToFiles(fileReader, folder);
+//        verify(fileReader).close();
+//        assertEquals(sortedFiles, files);
+//    }
 
     @Test
     public void sortBatchToFiles1() {
     }
 
     @Test
-    public void readFileChunkToArray() {
+    public void readFileChunkToArrayFullSize() throws IOException {
+        BufferedReader fileReader = mock(BufferedReader.class);
+        int[] tmpNumbers = new int[3];
+        doReturn("1").when(fileReader).readLine();
+
+        int actualSize = fileMergeSort.readFileChunkToArray(tmpNumbers, fileReader);
+
+        assertEquals(3, actualSize);
+        verify(fileReader, times(3)).readLine();
     }
 
     @Test
-    public void mergeSortedFiles1() {
+    public void readFileChunkToArrayPartSize() throws IOException {
+        BufferedReader fileReader = mock(BufferedReader.class);
+        int[] tmpNumbers = new int[3];
+        doReturn("1").doReturn(null).when(fileReader).readLine();
+
+        int actualSize = fileMergeSort.readFileChunkToArray(tmpNumbers, fileReader);
+
+        assertEquals(1, actualSize);
+        verify(fileReader, times(2)).readLine();
     }
 
     @Test
-    public void writeArrayToTmpFile() {
+    public void mergeSortedFiles() throws IOException {
+        DataInputStream tmpFileReader1 = mock(DataInputStream.class);
+        DataInputStream tmpFileReader2 = mock(DataInputStream.class);
+        List<DataInputStream> tmpFileReaders = List.of(tmpFileReader1, tmpFileReader2);
+        BufferedWriter resultFileWriter = mock(BufferedWriter.class);
+//        -4 1 3 7 EOF
+        doReturn(-4).doReturn(1).doReturn(3).doReturn(7).doThrow(EOFException.class).when(fileMergeSort).readInt(tmpFileReader1);
+//        -1 1 1 5 8 EOF
+        doReturn(-1).doReturn(1).doReturn(1).doReturn(5).doReturn(8).doThrow(EOFException.class).when(fileMergeSort).readInt(tmpFileReader2);
+
+        fileMergeSort.mergeSortedFiles(tmpFileReaders, resultFileWriter);
+
+//        -4 -1 1 1 1 3 5 7 8
+        verify(resultFileWriter).write("-4");
+        verify(resultFileWriter).write("-1");
+        verify(resultFileWriter, times(3)).write("1");
+        verify(resultFileWriter).write("3");
+        verify(resultFileWriter).write("5");
+        verify(resultFileWriter).write("7");
+        verify(resultFileWriter).write("8");
+        verify(resultFileWriter, times(8)).newLine();
     }
 
     @Test
-    public void createResultFileWriter() {
-    }
+    public void closeMergeStreams() throws IOException {
+        List<DataInputStream> tmpFileReaders = List.of(mock(DataInputStream.class), mock(DataInputStream.class));
+        BufferedWriter resultFileWriter = mock(BufferedWriter.class);
 
-    @Test
-    public void openTmpFileReaders() {
-    }
+        fileMergeSort.closeMergeStreams(tmpFileReaders, resultFileWriter);
 
-    @Test
-    public void closeMergeStreams() {
+        for (DataInputStream reader : tmpFileReaders) {
+            verify(reader).close();
+        }
+        verify(resultFileWriter).close();
     }
 }

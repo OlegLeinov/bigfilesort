@@ -66,10 +66,10 @@ public class FileMergeSort {
     }
 
     void mergeSortedFiles(List<DataInputStream> tmpFileReaders, BufferedWriter resultFileWriter) throws IOException {
-        List<Integer> minValues = new ArrayList<Integer>(tmpFileReaders.size());
+        List<Integer> minValues = new ArrayList<>(tmpFileReaders.size());
 
         for (DataInputStream reader : tmpFileReaders) {
-            minValues.add(reader.readInt());
+            minValues.add(readInt(reader));
         }
 
         boolean notFirst = false;
@@ -89,13 +89,17 @@ public class FileMergeSort {
             resultFileWriter.write(minValues.get(currentFileNumber).toString());
 
             try {
-                Integer nextValue = tmpFileReaders.get(currentFileNumber).readInt();
+                Integer nextValue = readInt(tmpFileReaders.get(currentFileNumber));
                 minValues.set(currentFileNumber, nextValue);
             } catch (EOFException e) {
                 System.out.println("Temp file number " + (currentFileNumber + 1) + " complete");
                 minValues.set(currentFileNumber, null);
             }
         }
+    }
+
+    int readInt(DataInputStream reader) throws IOException {
+        return reader.readInt();
     }
 
     File writeArrayToTmpFile(File folder, int[] tmpNumbers, int actualSize) throws IOException {
