@@ -44,9 +44,6 @@
                 <version>1.6.0</version>
                 <configuration>
                     <mainClass>com.olegleinov.bigfilesort.App</mainClass>
-                    <arguments>
-                        <argument>folder\original.txt</argument>
-                    </arguments>
                 </configuration>
             </plugin>
             <plugin>
